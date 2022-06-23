@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -176,6 +177,11 @@ func LoginCommand(input LoginCommandInput, f *vault.ConfigFile, keyring keyring.
 
 	if input.UseStdout {
 		fmt.Println(loginURL)
+	} else if browser := os.Getenv("BROWSER"); browser != "" {
+		if err = open.RunWith(loginURL, browser); err != nil {
+			log.Println(err)
+			fmt.Println(loginURL)
+		}
 	} else if err = open.Run(loginURL); err != nil {
 		log.Println(err)
 		fmt.Println(loginURL)

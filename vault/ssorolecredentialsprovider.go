@@ -131,13 +131,21 @@ func (p *SSORoleCredentialsProvider) newOIDCToken(ctx context.Context) (*ssooidc
 	}
 	log.Printf("Created OIDC device code for %s (expires in: %ds)", p.StartURL, deviceCreds.ExpiresIn)
 
+	verificationUri := aws.ToString(deviceCreds.VerificationUriComplete)
 	if p.UseStdout {
-		fmt.Fprintf(os.Stderr, "Open the SSO authorization page in a browser (use Ctrl-C to abort)\n%s\n", aws.ToString(deviceCreds.VerificationUriComplete))
+		fmt.Fprintf(os.Stderr, "Open the SSO authorization page in a browser (use Ctrl-C to abort)\n%s\n", verificationUri)
 	} else {
 		log.Println("Opening SSO authorization page in browser")
-		fmt.Fprintf(os.Stderr, "Opening the SSO authorization page in your default browser (use Ctrl-C to abort)\n%s\n", aws.ToString(deviceCreds.VerificationUriComplete))
-		if err := open.Run(aws.ToString(deviceCreds.VerificationUriComplete)); err != nil {
-			log.Printf("Failed to open browser: %s", err)
+		if browser := os.Getenv("BROWSER"); browser != "" {
+			fmt.Fprintf(os.Stderr, "Opening the SSO authorization page in %s (use Ctrl-C to abort)\n%s\n", browser, verificationUri)
+			if err := open.RunWith(verificationUri, browser); err != nil {
+				log.Printf("Failed to open %s: %s", browser, err)
+			}
+		} else {
+			fmt.Fprintf(os.Stderr, "Opening the SSO authorization page in your default browser (use Ctrl-C to abort)\n%s\n", verificationUri)
+			if err := open.Run(verificationUri); err != nil {
+				log.Printf("Failed to open browser: %s", err)
+			}
 		}
 	}
 
